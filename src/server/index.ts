@@ -4,7 +4,9 @@ import { PORT, SERVER_URL, UPDATE_INTERVAL } from '../common';
 const app = require('express')();
 const http = require('http').createServer(app);
 const socketIO = require('socket.io')(http);
+const cors = require("cors");
 
+app.use(cors());
 app.get('/', (req: any, res: any) => {
   res.send('<h1>Server</h1>');
 });
