@@ -6,12 +6,20 @@ import { initGame } from './game-map';
 import { move, registration } from './socket';
 
 (function () {
-  window.onload = function () {
-    registration().subscribe((socket: Socket) => {
+  const button = document.getElementById('button');
+  button.onclick = start;
+  function start() {
+    const input = document.getElementById('input') as HTMLInputElement;
+    input.style.display = 'none';
+    button.style.display = 'none';
+    registration(input.value).subscribe((socket: Socket) => {
       if (socket) {
         combineLatest(keyEventsObservable(document), interval(UPDATE_INTERVAL)).subscribe(([ movement ]) => move(movement));
         initGame(document, socket);
       }
     });
-  };
+  }
+  return {
+    start: start
+  }
 })();

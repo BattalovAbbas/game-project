@@ -1,11 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+<style>
+  .center {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+  }
+</style>
 <head>
   <meta charset="UTF-8">
   <title>Title</title>
 </head>
-<body>
-<canvas id="canvas" style="width: 800px; height: 600px; border: 5px solid black;"></canvas>
+<div class="center">
+  <input placeholder="Enter your name" type="text" id="input">
+  <button id="button">GO</button>
+</div>
+<canvas id="canvas" class="center" style="display: none; border: 5px solid black;"></canvas>
 <script src="dist/client-bundle.js"></script>
 </body>
 </html>
