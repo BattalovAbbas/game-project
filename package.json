@@ -28,7 +28,7 @@
   "scripts": {
     "build_client": "webpack --config webpack.client.config.js",
     "build_server": "webpack --config webpack.server.config.js",
-    "build": "npm-run-all -p build_client build_server",
+    "build": "set NODE_ENV=production && npm-run-all -p build_client build_server",
     "watch_client": "webpack --watch --config webpack.client.config.js",
     "watch_server": "webpack --watch --config webpack.server.config.js",
     "start": "npm-run-all -p watch_server watch_client"

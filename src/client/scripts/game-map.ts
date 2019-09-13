@@ -13,16 +13,17 @@ export function initGame(document: Document, socket: Socket) {
     for (let id in players) {
       const { x, y, color, name } = players[id];
       context.strokeStyle = color;
+      context.beginPath();
       context.lineWidth = 3;
       context.textBaseline = "middle";
       context.font = "7pt sans-serif";
       context.fillStyle = "black";
       let textX = x + PLAYER_WIDTH / 2 - context.measureText(name).width/2;
       let textY = y + PLAYER_HEIGHT / 2;
-      context.beginPath();
       context.strokeRect(x, y, PLAYER_WIDTH, PLAYER_HEIGHT);
       context.fillText(name, textX, textY);
       context.fill();
+      context.closePath();
     }
   });
 }
