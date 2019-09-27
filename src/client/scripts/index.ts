@@ -1,6 +1,4 @@
-import { combineLatest, interval } from 'rxjs';
 import { Socket } from 'socket.io';
-import { UPDATE_INTERVAL } from '../../common';
 import { keyEventsObservable } from './events-subscribers';
 import { initGame } from './game-map';
 import { move, registration } from './socket';
@@ -14,7 +12,7 @@ import { move, registration } from './socket';
     button.style.display = 'none';
     registration(input.value).subscribe((socket: Socket) => {
       if (socket) {
-        combineLatest(keyEventsObservable(document), interval(UPDATE_INTERVAL)).subscribe(([ movement ]) => move(movement));
+        keyEventsObservable(document).subscribe((movement) => move(movement));
         initGame(document, socket);
       }
     });

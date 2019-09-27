@@ -1,6 +1,6 @@
 import { Socket } from 'socket.io';
-import { Movement, PORT, SERVER_URL, UPDATE_INTERVAL } from '../common';
-import { addNewPlayer, deletePlayer, gameCircle, movePlayer } from './game';
+import { Movement, PORT, SERVER_URL } from '../common';
+import { addNewPlayer, disconnectPlayer, gameCircle, movePlayer } from './game';
 
 const app = require('express')();
 const http = require('http').createServer(app);
@@ -16,16 +16,16 @@ socketIO.on('connection', (socket: Socket) => {
   socket.on('join', name => {
     const player = addNewPlayer(name, socket.id);
     if (player) {
-      socketIO.sockets.emit('joined', true);
+      socketIO.to(`${ socket.id }`).emit('joined', true);
+      gameCircle().subscribe(players => socket.emit('state', players));
     }
   });
   socket.on('movement', (data: Movement) => {
     movePlayer(socket.id, data);
   });
   socket.on('disconnect', () => {
-    deletePlayer(socket.id);
+    disconnectPlayer(socket.id);
   });
-  gameCircle().subscribe(players => socketIO.sockets.emit('state', players))
 });
 
 http.listen(PORT, () => {

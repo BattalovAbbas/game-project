@@ -17,6 +17,9 @@ export function keyEventsObservable(document: Document): Observable<Movement> {
     right: false
   };
   document.addEventListener('keydown', event => {
+    if (event.repeat) {
+      return;
+    }
     switch (event.keyCode) {
       case Keys.LEFT: // A
         movement.left = true;
