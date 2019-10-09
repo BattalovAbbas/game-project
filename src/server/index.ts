@@ -17,7 +17,7 @@ socketIO.on('connection', (socket: Socket) => {
     const player = addNewPlayer(name, socket.id);
     if (player) {
       socketIO.to(`${ socket.id }`).emit('joined', true);
-      gameCircle().subscribe(players => socket.emit('state', players));
+      gameCircle().subscribe(state => socket.emit('state', state));
     }
   });
   socket.on('movement', (data: Movement) => {

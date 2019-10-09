@@ -3,4 +3,7 @@ export interface Movement {
   down: boolean;
   left: boolean;
   right: boolean;
+  arrowLeft: boolean;
+  arrowRight: boolean;
+  fire: boolean;
 }

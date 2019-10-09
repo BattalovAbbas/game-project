@@ -3,4 +3,7 @@ export interface Player {
   y: number;
   color: string;
   name: string;
+  angle: number;
+  lastFire: number;
+  health: number;
 }

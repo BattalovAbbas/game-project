@@ -1,8 +1,8 @@
 import Konva from "konva";
-import { Group } from 'konva/types/Group';
 import { Layer } from 'konva/types/Layer';
 import { Socket } from 'socket.io';
-import { GAME_MAP_HEIGHT, GAME_MAP_WIDTH, Player, PLAYER_WIDTH } from '../../common';
+import { Bullet, BULLET_RADIUS, GAME_MAP_HEIGHT, GAME_MAP_WIDTH, GameState, Wall } from '../../common';
+import { createPlayer, PlayerObject } from './player';
 
 export function initGame(document: Document, socket: Socket) {
   const stage = new Konva.Stage({
@@ -12,38 +12,73 @@ export function initGame(document: Document, socket: Socket) {
   });
   const layer = new Konva.Layer();
   stage.add(layer);
-  let playersObjects: { [playerId: string]: Group } = {};
-  let players: { [playerId: string]: Player } = {};
+  let playersObjects: { [playerId: string]: PlayerObject } = {};
+  let wallsObjects: { [id: number]: Konva.Rect } = {};
+  let bulletsObjects: { [id: number]: Konva.Circle } = {};
+  let state: GameState;
+  const objects: {
+    playersObjects: { [playerId: string]: PlayerObject };
+    wallsObjects: { [id: string]: Konva.Rect };
+    bulletsObjects: { [id: string]: Konva.Circle };
+  } = { playersObjects, wallsObjects, bulletsObjects };
 
-  socket.on('state', (data: { [playerId: string]: Player }) => {
-    players = data;
-    if (Object.keys(players).length !== Object.keys(playersObjects).length) {
-      playersObjects = updateGameObjects(layer, playersObjects, players);
-    }
+  socket.on('state', (newState: GameState) => {
+    state = newState;
+    updateGameObjects(layer, objects, state);
   });
   const anim = new Konva.Animation(() => {
-    for (let id in players) {
-      let object = playersObjects[id];
-      if (object) {
-        object.x(players[id].x);
-        object.y(players[id].y);
-        object.rotate(1);
+    if (state) {
+      for (let id in state.players) {
+        let object = objects.playersObjects[id];
+        if (object) {
+          object.setPosition(state.players[id].x, state.players[id].y);
+          object.rotateGun(state.players[id].angle);
+        }
+      }
+      for (let id in state.walls) {
+        let object = objects.wallsObjects[id];
+        if (object) {
+          object.x(state.walls[id].x);
+          object.y(state.walls[id].y);
+        }
+      }
+      for (let id in state.bullets) {
+        let object = objects.bulletsObjects[id];
+        if (object) {
+          object.x(state.bullets[id].x);
+          object.y(state.bullets[id].y);
+        }
       }
     }
   }, layer);
   anim.start();
 }
 
-function createNewObject(layer: Layer, { x, y, name, color }: Player): Group {
-  const container = new Konva.Group({
-    x,
-    y
-  });
-  const object = new Konva.Circle({
-    x: 0,
-    y: 0,
-    radius: PLAYER_WIDTH,
-    fill: color,
+function updateGameObjects(layer: Layer, objects: any, state: GameState) {
+  const playersIds = Object.keys(state.players);
+  Object.keys(objects.playersObjects).filter(x => !playersIds.includes(x)).forEach(player => objects.playersObjects[player].destroy());
+  let newPlayersObjects: { [playerId: string]: PlayerObject } = {};
+  playersIds.forEach(id => newPlayersObjects[id] = objects.playersObjects[id] || createPlayer(layer, state.players[id]));
+  objects.playersObjects = newPlayersObjects;
+  const wallIds = Object.keys(state.walls);
+  Object.keys(objects.wallsObjects).filter(x => !wallIds.includes(x)).forEach(wall => objects.wallsObjects[wall].destroy());
+  let newWallsObjects: { [id: string]: Konva.Rect } = {};
+  wallIds.forEach(id => newWallsObjects[id] = objects.wallsObjects[id] || createWall(layer, state.walls[id]));
+  objects.wallsObjects = newWallsObjects;
+  const bulletsIds = Object.keys(state.bullets);
+  Object.keys(objects.bulletsObjects).filter(x => !bulletsIds.includes(x)).forEach(bullet => objects.bulletsObjects[bullet].destroy());
+  let newBulletsObjects: { [id: string]: Konva.Circle } = {};
+  bulletsIds.forEach(id => newBulletsObjects[id] = objects.bulletsObjects[id] || createBullet(layer, state.bullets[id]));
+  objects.bulletsObjects = newBulletsObjects;
+}
+
+function createWall(layer: Layer, wall: Wall): Konva.Rect {
+  const body = new Konva.Rect({
+    x: wall.x,
+    y: wall.y,
+    width: wall.width,
+    height: wall.height,
+    fill: 'white',
     stroke: 'black',
     shadowColor: 'black',
     shadowBlur: 10,
@@ -52,46 +87,25 @@ function createNewObject(layer: Layer, { x, y, name, color }: Player): Group {
       y: 5
     },
     shadowOpacity: 0.6,
-    strokeWidth: 0
+    strokeWidth: 0,
+    offset: {
+      x: wall.width / 2,
+      y: wall.height / 2
+    }
   });
-  // const object = new Konva.Star({
-  //   x: 0,
-  //   y: 0,
-  //   numPoints: 5,
-  //   innerRadius: PLAYER_WIDTH - 15,
-  //   outerRadius: PLAYER_WIDTH,
-  //   fill: color,
-  //   opacity: 0.8,
-  //   rotation: Math.random() * 180,
-  //   shadowColor: 'black',
-  //   shadowBlur: 10,
-  //   shadowOffset: {
-  //     x: 5,
-  //     y: 5
-  //   },
-  //   shadowOpacity: 0.6,
-  // });
-  const text = new Konva.Text({
-    x: -(PLAYER_WIDTH / 2),
-    y: -(PLAYER_WIDTH / 5),
-    text: name,
-    fontSize: 12,
-    fontFamily: 'Courier',
-    fill: 'black'
-  });
-  container.rotate = (value) => { object.rotate(value); return container; };
-  container.add(object);
-  container.add(text);
-  layer.add(container);
-  return container;
+  layer.add(body);
+  return body;
 }
 
-function updateGameObjects(layer: Layer, playersObjects: { [playerId: string]: Group }, players: { [playerId: string]: Player }): { [playerId: string]: Group } {
-  const playersIds = Object.keys(players);
-  Object.keys(playersObjects).filter(x => !playersIds.includes(x)).forEach(player => playersObjects[player].destroy());
-  let newPlayersObjects: { [playerId: string]: Group } = {};
-  playersIds.forEach(id => newPlayersObjects[id] = playersObjects[id] || createNewObject(layer, players[id]));
-  return newPlayersObjects;
+function createBullet(layer: Layer, bullet: Bullet): Konva.Circle {
+  const body = new Konva.Circle({
+    x: bullet.x,
+    y: bullet.y,
+    radius: BULLET_RADIUS,
+    fill: 'white',
+  });
+  layer.add(body);
+  return body;
 }
 
 // let count = 0;
